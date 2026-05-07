@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomBook · ESISA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:    #0b1120;
+  --navy2:   #111827;
+  --navy3:   #1a2540;
+  --glass:   rgba(255,255,255,0.05);
+  --border:  rgba(255,255,255,0.08);
+  --accent:  #6c8ef7;
+  --accent2: #a78bfa;
+  --green:   #34d399;
+  --amber:   #fbbf24;
+  --red:     #f87171;
+  --text:    #e2e8f0;
+  --muted:   #94a3b8;
+  --radius:  14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--navy);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 800px 600px at 20% 10%, rgba(108,142,247,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 500px at 80% 80%, rgba(167,139,250,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 400px 300px at 60% 30%, rgba(52,211,153,0.06) 0%, transparent 50%);
+  pointer-events:none; z-index:0;
+  animation:bgPulse 12s ease-in-out infinite alternate;
+}
+@keyframes bgPulse { 0%{opacity:.7} 100%{opacity:1} }
+.app { position:relative; z-index:1; max-width:1300px; margin:0 auto; padding:0 28px 80px; }
+
+/* ── Header ── */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:30px 0 34px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:36px;
+}
+.logo { display:flex; align-items:center; gap:16px; }
+.logo-icon {
+  width:48px; height:48px; border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px;
+  box-shadow:0 0 28px rgba(108,142,247,0.45);
+}
+.logo-text h1 {
+  font-family:'Syne',sans-serif; font-weight:800; font-size:27px;
+  background:linear-gradient(90deg,#fff 30%,var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:-0.5px;
+}
+.logo-text p { font-size:13px; color:var(--muted); margin-top:2px; letter-spacing:.4px; }
+.header-right { display:flex; gap:10px; }
+
+/* ── Buttons ── */
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 20px; border-radius:10px; border:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
+  transition:all .2s;
+}
+.btn-primary {
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; box-shadow:0 4px 22px rgba(108,142,247,.35);
+}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(108,142,247,.5); }
+.btn-primary:active { transform:scale(.97); }
+.btn-ghost {
+  background:var(--glass); border:1px solid var(--border); color:var(--text);
+  backdrop-filter:blur(8px);
+}
+.btn-ghost:hover { background:rgba(255,255,255,.09); border-color:rgba(255,255,255,.15); }
+
+/* ── Stats ── */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+.stat-card {
+  background:var(--glass); border:1px solid var(--border); border-radius:var(--radius);
+  padding:22px 24px; backdrop-filter:blur(12px);
+  transition:transform .2s, box-shadow .2s; position:relative; overflow:hidden;
+}
+.stat-card::after {
+  content:''; position:absolute; inset:0; border-radius:var(--radius);
+  background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+.stat-card:hover { transform:translateY(-3px); box-shadow:0 14px 44px rgba(0,0,0,.3); }
+.stat-icon {
+  width:38px; height:38px; border-radius:10px; margin-bottom:14px;
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.si-blue   { background:rgba(108,142,247,.18); }
+.si-green  { background:rgba(52,211,153,.18); }
+.si-amber  { background:rgba(251,191,36,.18); }
+.si-purple { background:rgba(167,139,250,.18); }
+.stat-val {
+  font-family:'Syne',sans-serif; font-size:34px; font-weight:700; line-height:1;
+  animation:countIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes countIn { from{opacity:0;transform:scale(.7)} to{opacity:1;transform:scale(1)} }
+.stat-lbl { font-size:13px; color:var(--muted); margin-top:6px; }
+
+/* ── Controls ── */
+.controls {
+  display:flex; gap:14px; align-items:center; margin-bottom:28px; flex-wrap:wrap;
+}
+.ctrl-pill {
+  display:flex; align-items:center; gap:10px;
+  background:var(--glass); border:1px solid var(--border);
+  border-radius:12px; padding:8px 16px; backdrop-filter:blur(8px);
+  transition:border-color .2s;
+}
+.ctrl-pill:hover { border-color:rgba(108,142,247,.4); }
+.ctrl-pill label { font-size:12px; color:var(--muted); white-space:nowrap; }
+.ctrl-pill input, .ctrl-pill select {
+  background:transparent; border:none; outline:none;
+  color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px;
+  cursor:pointer;
+}
+.ctrl-pill select option { background:#1a2540; }
+
+/* ── Table wrapper ── */
+.planning-wrap {
+  background:var(--glass); border:1px solid var(--border); border-radius:22px;
+  backdrop-filter:blur(16px); overflow:hidden;
+  animation:fadeUp .4s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+.planning { width:100%; border-collapse:collapse; table-layout:fixed; }
+.planning thead tr { background:rgba(255,255,255,.035); }
+.planning th {
+  padding:16px 14px;
+  font-family:'Syne',sans-serif; font-weight:600; font-size:12px;
+  color:var(--muted); text-transform:uppercase; letter-spacing:.7px;
+  border-bottom:1px solid var(--border); text-align:center;
+}
+.planning th:first-child { text-align:left; padding-left:22px; width:86px; }
+.planning td {
+  padding:9px 10px; border-bottom:1px solid rgba(255,255,255,.035);
+  vertical-align:top; text-align:center;
+}
+.planning td:first-child {
+  text-align:left; padding-left:22px;
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:600;
+  color:rgba(148,163,184,.8); white-space:nowrap; width:86px;
+}
+.planning tr:last-child td { border-bottom:none; }
+.planning tbody tr:hover td { background:rgba(255,255,255,.018); }
+
+/* ── Resa pill ── */
+.resa {
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  padding:5px 11px; border-radius:8px; margin:2px; font-size:12px; font-weight:500;
+  max-width:100%; overflow:hidden; white-space:nowrap;
+  transition:transform .15s, filter .15s;
+}
+.resa:hover { transform:scale(1.05); filter:brightness(1.15); }
+.resa-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.resa.confirmee {
+  background:rgba(108,142,247,.18); border:1px solid rgba(108,142,247,.38); color:#a5b4fc;
+}
+.resa.confirmee .resa-dot { background:var(--accent); box-shadow:0 0 4px var(--accent); }
+.resa.en_attente {
+  background:rgba(251,191,36,.15); border:1px solid rgba(251,191,36,.35); color:#fde68a;
+}
+.resa.en_attente .resa-dot { background:var(--amber); box-shadow:0 0 4px var(--amber); }
+.resa.annulee {
+  background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.25);
+  color:#fca5a5; text-decoration:line-through;
+}
+.resa.annulee .resa-dot { background:var(--red); }
+
+.slot-empty {
+  display:block; width:100%; height:30px; border-radius:6px;
+  border:1px dashed rgba(255,255,255,.06); cursor:pointer;
+  transition:background .2s, border-color .2s;
+}
+.slot-empty:hover { background:rgba(108,142,247,.08); border-color:rgba(108,142,247,.35); }
+
+/* ── Loading ── */
+#loading {
+  text-align:center; padding:64px; color:var(--muted);
+  font-size:15px; display:flex; align-items:center; justify-content:center; gap:14px;
+}
+.spinner {
+  width:22px; height:22px; border-radius:50%;
+  border:2px solid rgba(108,142,247,.25); border-top-color:var(--accent);
+  animation:spin .75s linear infinite; flex-shrink:0;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── Modal overlay ── */
+.overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.65); backdrop-filter:blur(8px);
+  z-index:1000; align-items:center; justify-content:center;
+}
+.overlay.open { display:flex; animation:fadeOverlay .2s; }
+@keyframes fadeOverlay { from{opacity:0} to{opacity:1} }
+
+.modal {
+  background:#141e33; border:1px solid rgba(255,255,255,.1);
+  border-radius:22px; padding:34px; width:90%; max-width:520px;
+  box-shadow:0 32px 90px rgba(0,0,0,.65);
+  animation:popIn .28s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn {
+  from{opacity:0;transform:scale(.9) translateY(24px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.modal-header {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;
+}
+.modal-header h2 {
+  font-family:'Syne',sans-serif; font-weight:700; font-size:21px;
+  background:linear-gradient(90deg,#fff,var(--accent2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.btn-x {
+  width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+  background:var(--glass); color:var(--muted); cursor:pointer;
+  font-size:16px; display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.btn-x:hover { background:rgba(248,113,113,.15); color:var(--red); border-color:rgba(248,113,113,.3); }
+
+.fg { margin-bottom:18px; }
+.fg label {
+  display:block; font-size:11px; color:var(--muted); text-transform:uppercase;
+  letter-spacing:.7px; margin-bottom:8px; font-weight:500;
+}
+.fg input, .fg select {
+  width:100%; background:rgba(255,255,255,.055); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); padding:12px 16px;
+  font-size:14px; font-family:'DM Sans',sans-serif;
+  transition:border-color .2s, box-shadow .2s;
+}
+.fg input:focus, .fg select:focus {
+  outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(108,142,247,.2);
+}
+.fg input::placeholder { color:rgba(148,163,184,.5); }
+.fg select option { background:#1a2540; }
+.frow { display:flex; gap:12px; }
+.frow .fg { flex:1; }
+.mdivider { height:1px; background:var(--border); margin:24px 0; }
+.mfooter { display:flex; justify-content:flex-end; gap:10px; }
+
+/* ── Legend ── */
+.legend {
+  display:flex; gap:20px; padding:16px 22px; border-top:1px solid var(--border);
+  flex-wrap:wrap;
+}
+.leg-item { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); }
+.leg-dot { width:8px; height:8px; border-radius:50%; }
+.ld-blue   { background:var(--accent); box-shadow:0 0 5px var(--accent); }
+.ld-amber  { background:var(--amber); box-shadow:0 0 5px var(--amber); }
+.ld-red    { background:var(--red); }
+
+/* ── Toast ── */
+#toast {
+  position:fixed; bottom:28px; right:28px; z-index:2000;
+  padding:14px 22px; border-radius:12px; font-size:14px; font-weight:500;
+  opacity:0; transform:translateY(18px);
+  transition:opacity .3s, transform .3s;
+  pointer-events:none; max-width:340px; backdrop-filter:blur(12px);
+}
+#toast.show  { opacity:1; transform:translateY(0); }
+#toast.ok  { background:rgba(52,211,153,.18); border:1px solid rgba(52,211,153,.4); color:#6ee7b7; }
+#toast.err { background:rgba(248,113,113,.18); border:1px solid rgba(248,113,113,.4); color:#fca5a5; }
+
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.14); border-radius:3px; }
+
+@media(max-width:900px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:600px) {
+  header { flex-direction:column; gap:16px; align-items:flex-start; }
+  .stats { grid-template-columns:1fr 1fr; }
+  .frow  { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🗓</div>
+      <div class="logo-text">
+        <h1>RoomBook</h1>
+        <p>Gestion des salles · ESISA</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-ghost" onclick="loadData()">
+        <span id="ri" style="display:inline-block">↺</span> Actualiser
+      </button>
+      <button class="btn btn-primary" onclick="openModal()">＋ Réserver</button>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon si-blue">🏢</div>
+      <div class="stat-val" id="ss">—</div>
+      <div class="stat-lbl">Salles disponibles</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon si-green">✅</div>
+      <div class="stat-val" id="sc">—</div>
+      <div class="stat-lbl">Confirmées aujourd'hui</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon si-amber">⏳</div>
+      <div class="stat-val" id="sa">—</div>
+      <div class="stat-lbl">En attente</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon si-purple">👥</div>
+      <div class="stat-val" id="se">—</div>
+      <div class="stat-lbl">Employés actifs</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl-pill">
+      <label>📅 Date</label>
+      <input type="date" id="dateSelect" value="2024-12-09">
+    </div>
+    <div class="ctrl-pill">
+      <label>🏢 Salle</label>
+      <select id="salleFilter"><option value="">Toutes les salles</option></select>
+    </div>
+  </div>
+
+  <!-- Planning -->
+  <div class="planning-wrap">
+    <div id="loading">
+      <div class="spinner"></div>
+      Connexion en cours…
+    </div>
+    <div id="planning"></div>
+    <div class="legend">
+      <span class="leg-item"><span class="leg-dot ld-blue"></span> Confirmée</span>
+      <span class="leg-item"><span class="leg-dot ld-amber"></span> En attente</span>
+      <span class="leg-item"><span class="leg-dot ld-red"></span> Annulée</span>
+      <span class="leg-item" style="margin-left:auto;color:rgba(148,163,184,.5);font-size:11px">
+        Cliquez sur un créneau vide pour réserver rapidement
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="bgClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Nouvelle réservation</h2>
+      <button class="btn-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="fg">
+      <label>Salle</label>
+      <select id="salle_id" required></select>
+    </div>
+    <div class="fg">
+      <label>Employé</label>
+      <select id="employe_id" required></select>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Date</label><input type="date" id="date_reservation" required></div>
+      <div class="fg"><label>Début</label><input type="time" id="heure_debut" required></div>
+      <div class="fg"><label>Fin</label><input type="time" id="heure_fin" required></div>
+    </div>
+    <div class="fg">
+      <label>Titre de la réunion</label>
+      <input type="text" id="titre" placeholder="Ex : Réunion équipe IT…" required>
+    </div>
+    <div class="mdivider"></div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="submitForm()">✓ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let salles=[], employes=[], reservations=[];
+const HOURS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+
+async function loadData(){
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('planning').innerHTML='';
+  const ri=document.getElementById('ri');
+  ri.style.animation='spin .8s linear infinite';
+
+  try {
+    const [sr,er]=await Promise.all([
+      fetch('api.php?action=salles').then(r=>r.json()),
+      fetch('api.php?action=employes').then(r=>r.json())
+    ]);
+    salles=sr.data??[];
+    employes=er.data??[];
+
+    fillSel('salle_id',  salles,   'nom', true);
+    fillSel('employe_id',employes, 'nom', false);
+    fillFilter(salles);
+
+    const date=document.getElementById('dateSelect').value||'2024-12-09';
+    const rr=await fetch(`api.php?action=reservations&date=${date}`).then(r=>r.json());
+    reservations=rr.data??[];
+
+    updateStats();
+    renderPlanning();
+    document.getElementById('loading').style.display='none';
+  } catch(e){
+    document.getElementById('loading').innerHTML=
+      `<span style="color:var(--red)">❌ Erreur : ${e}</span>`;
+  }
+  ri.style.animation='';
+}
+
+function fillSel(id,data,field,cap){
+  const s=document.getElementById(id);
+  s.innerHTML='<option value="">— Sélectionner —</option>';
+  data.forEach(i=>{
+    const c=cap&&i.capacite?` · ${i.capacite} pers.`:'';
+    s.innerHTML+=`<option value="${i.id}">${i[field]}${c}</option>`;
+  });
+}
+function fillFilter(data){
+  const s=document.getElementById('salleFilter');
+  s.innerHTML='<option value="">Toutes les salles</option>';
+  data.forEach(i=>{ s.innerHTML+=`<option value="${i.id}">${i.nom}</option>`; });
+}
+
+function updateStats(){
+  document.getElementById('ss').textContent=salles.length;
+  document.getElementById('se').textContent=employes.length;
+  document.getElementById('sc').textContent=reservations.filter(r=>r.statut==='confirmee').length;
+  document.getElementById('sa').textContent=reservations.filter(r=>r.statut==='en_attente').length;
+}
+
+function renderPlanning(){
+  const fv=document.getElementById('salleFilter').value;
+  const cols=fv?salles.filter(s=>s.id==fv):salles;
+  if(!cols.length){
+    document.getElementById('planning').innerHTML='<p style="text-align:center;padding:44px;color:var(--muted)">Aucune salle.</p>';
+    return;
+  }
+  let h=`<table class="planning"><thead><tr><th>Heure</th>`;
+  cols.forEach(s=>{
+    h+=`<th>${s.nom}${s.capacite?`<br><small style="font-size:11px;font-weight:400;opacity:.5">${s.capacite} pers.</small>`:''}</th>`;
+  });
+  h+=`</tr></thead><tbody>`;
+  HOURS.forEach((hr,hi)=>{
+    h+=`<tr><td>${hr}</td>`;
+    cols.forEach(s=>{
+      const resa=reservations.filter(r=>r.salle_id==s.id&&overlaps(r.heure_debut,r.heure_fin,hr,HOURS[hi+1]||'18:00'));
+      h+=`<td>`;
+      if(resa.length){
+        resa.forEach(r=>{
+          const lbl=r.titre.length>18?r.titre.slice(0,17)+'…':r.titre;
+          const tip=`${r.titre} — ${r.employe_nom||'?'} · ${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}`;
+          h+=`<div class="resa ${r.statut}" title="${tip}"><span class="resa-dot"></span>${lbl}</div>`;
+        });
+      } else {
+        h+=`<div class="slot-empty" onclick="quickBook('${s.id}','${hr}')" title="Réserver ${hr} – ${HOURS[hi+1]||'18:00'}"></div>`;
+      }
+      h+=`</td>`;
+    });
+    h+=`</tr>`;
+  });
+  h+=`</tbody></table>`;
+  document.getElementById('planning').innerHTML=h;
+}
+
+function overlaps(s1,e1,s2,e2){ return toMin(s1)<toMin(e2)&&toMin(s2)<toMin(e1); }
+function toMin(t){ const[h,m]=t.split(':').map(Number); return h*60+m; }
+
+function quickBook(salleId,heure){
+  document.getElementById('salle_id').value=salleId;
+  document.getElementById('date_reservation').value=document.getElementById('dateSelect').value;
+  document.getElementById('heure_debut').value=heure;
+  const[h,m]=heure.split(':').map(Number);
+  document.getElementById('heure_fin').value=`${String(h+1).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  openModal();
+}
+
+function openModal(){
+  if(!document.getElementById('date_reservation').value)
+    document.getElementById('date_reservation').value=document.getElementById('dateSelect').value;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+function bgClick(e){ if(e.target===document.getElementById('overlay'))closeModal(); }
+
+async function submitForm(){
+  const ids=['salle_id','employe_id','date_reservation','heure_debut','heure_fin','titre'];
+  for(const id of ids){
+    if(!document.getElementById(id).value){
+      toast('❗ Veuillez remplir tous les champs.','err'); return;
+    }
+  }
+  const data={
+    salle_id:        document.getElementById('salle_id').value,
+    employe_id:      document.getElementById('employe_id').value,
+    date_reservation:document.getElementById('date_reservation').value,
+    heure_debut:     document.getElementById('heure_debut').value+':00',
+    heure_fin:       document.getElementById('heure_fin').value+':00',
+    titre:           document.getElementById('titre').value
+  };
+  try{
+    const res=await fetch('api.php?action=reservation',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)
+    });
+    const json=await res.json();
+    if(res.ok&&json.success){ closeModal(); toast('✅ Réservation créée !','ok'); loadData(); }
+    else toast('❌ '+(json.error||'Erreur inconnue'),'err');
+  }catch(e){ toast('❌ Erreur réseau : '+e,'err'); }
+}
+
+function toast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`show ${type}`;
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>{ t.className=''; },3500);
+}
+
+document.getElementById('dateSelect').onchange=loadData;
+document.getElementById('salleFilter').onchange=renderPlanning;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModal(); });
+loadData();
+</script>
+</body>
+</html>
