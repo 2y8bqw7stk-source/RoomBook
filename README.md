@@ -59,7 +59,7 @@ Vérifiez la configuration de la connexion dans `api.php`. Par défaut :
 - DB Name : roombook  
 - User : root  
 
---
+
 
 ### 3. Lancement
 Placez le dossier du projet dans votre serveur local (ex: `htdocs` pour XAMPP), puis accédez à :
