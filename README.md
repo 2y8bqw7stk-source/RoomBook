@@ -23,10 +23,10 @@ Elle permet de piloter l'occupation des espaces en temps réel, d'éviter les co
 
 ## 🛠️ Stack Technique
 
-- **Frontend** : HTML5, CSS3 (Variables, Flexbox, Grid), JavaScript (ES6+, Fetch API)
-- **Backend** : PHP 8.x avec une architecture API RESTful
-- **Base de données** : MySQL (PDO pour la sécurité des requêtes)
-- **Design** : Polices Syne et DM Sans pour une typographie professionnelle
+-  **Frontend** : HTML5, CSS3 (Variables, Flexbox, Grid), JavaScript (ES6+, Fetch API)
+-  **Backend** : PHP 8.x avec une architecture API RESTful
+-  **Base de données** : MySQL (PDO pour la sécurité des requêtes)
+-  **Design** : Polices Syne et DM Sans pour une typographie professionnelle
 
 
 
