@@ -3,7 +3,7 @@
 RoomBook est une solution moderne de gestion de réservation de salles de réunion conçue pour l'ESISA.  
 Elle permet de piloter l'occupation des espaces en temps réel, d'éviter les conflits d'horaires et de simplifier l'organisation interne via une interface fluide et réactive.
 
---
+
 
 ## ✨ Fonctionnalités
 
@@ -19,7 +19,7 @@ Elle permet de piloter l'occupation des espaces en temps réel, d'éviter les co
 
 - **Design "Glassmorphism"** : Interface sombre élégante avec des effets de transparence et des animations fluides.
 
---
+
 
 ## 🛠️ Stack Technique
 
@@ -28,7 +28,7 @@ Elle permet de piloter l'occupation des espaces en temps réel, d'éviter les co
 - **Base de données** : MySQL (PDO pour la sécurité des requêtes)
 - **Design** : Polices Syne et DM Sans pour une typographie professionnelle
 
---
+
 
 ## 📂 Structure du Projet
 
@@ -38,7 +38,7 @@ Elle permet de piloter l'occupation des espaces en temps réel, d'éviter les co
 
 └── database.sql (Schéma SQL et données d'initialisation)
 
---
+
 
 ## 🚀 Installation & Configuration
 
@@ -50,7 +50,7 @@ Cela créera la base **roombook** et les tables suivantes :
 - **employes** : Répertoire du personnel (IT, RH, Marketing, etc.)
 - **reservations** : Journal des créneaux réservés
 
---
+
 
 ### 2. Backend
 Vérifiez la configuration de la connexion dans `api.php`. Par défaut :
@@ -68,7 +68,7 @@ Placez le dossier du projet dans votre serveur local (ex: `htdocs` pour XAMPP), 
 http://localhost/votre-dossier/
 ```
 
---
+
 
 ## 📡 API Endpoints
 
