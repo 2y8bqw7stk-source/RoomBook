@@ -30,7 +30,7 @@ Elle permet de piloter l'occupation des espaces en temps réel, d'éviter les co
 
 
 
-## 📂 Structure du Projet
+ ## 📂 Structure du Projet
 
 ├── index.html (Interface utilisateur (SPA) et logique JavaScript)
 
