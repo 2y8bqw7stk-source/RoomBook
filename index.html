@@ -284,6 +284,18 @@ header {
 #toast.ok  { background:rgba(52,211,153,.18); border:1px solid rgba(52,211,153,.4); color:#6ee7b7; }
 #toast.err { background:rgba(248,113,113,.18); border:1px solid rgba(248,113,113,.4); color:#fca5a5; }
 
+/* ── Config banner ── */
+#cfg-banner {
+  background:rgba(251,191,36,.1); border:1px solid rgba(251,191,36,.3);
+  border-radius:12px; padding:14px 20px; margin-bottom:24px;
+  font-size:13px; color:#fde68a; display:none; gap:10px; align-items:center;
+}
+#cfg-banner b { color:var(--amber); }
+#cfg-banner code {
+  background:rgba(0,0,0,.3); padding:2px 8px; border-radius:5px;
+  font-size:12px; color:#fff;
+}
+
 ::-webkit-scrollbar { width:5px; height:5px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.14); border-radius:3px; }
@@ -317,6 +329,11 @@ header {
     </div>
   </header>
 
+  <!-- Banner configuration -->
+  <div id="cfg-banner">
+    ⚙️ <span id="cfg-msg"></span>
+  </div>
+
   <!-- Stats -->
   <div class="stats">
     <div class="stat-card">
@@ -345,7 +362,7 @@ header {
   <div class="controls">
     <div class="ctrl-pill">
       <label>📅 Date</label>
-      <input type="date" id="dateSelect" value="2024-12-09">
+      <input type="date" id="dateSelect">
     </div>
     <div class="ctrl-pill">
       <label>🏢 Salle</label>
@@ -407,8 +424,46 @@ header {
 <div id="toast"></div>
 
 <script>
+// ─────────────────────────────────────────────────────────────
+// ⚙️  CONFIGURATION — Modifiez cette ligne si nécessaire
+// ─────────────────────────────────────────────────────────────
+// Remplacez "roombook" par le nom de votre dossier dans htdocs
+// Exemple : si votre dossier s'appelle "myapp" → '/myapp/api.php'
+const API = detectAPI();
+
+function detectAPI() {
+  // Si le HTML est servi depuis XAMPP (localhost), construire le chemin automatiquement
+  const loc = window.location;
+  if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') {
+    // Chemin relatif : même dossier que index.html → fonctionne toujours
+    return 'api.php';
+  }
+  // Sinon chemin relatif par défaut
+  return 'api.php';
+}
+// ─────────────────────────────────────────────────────────────
+
 let salles=[], employes=[], reservations=[];
 const HOURS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+
+// Date du jour par défaut
+(function(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const today = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  document.getElementById('dateSelect').value = today;
+})();
+
+async function apiFetch(url, opts) {
+  // Construire l'URL complète
+  const fullUrl = url.startsWith('http') ? url : API + (url.startsWith('?') ? url : '?' + url.replace(/^api\.php\??/,''));
+  const res = await fetch(fullUrl, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({error:'Erreur serveur '+res.status}));
+    throw new Error(err.error || 'Erreur HTTP ' + res.status);
+  }
+  return res.json();
+}
 
 async function loadData(){
   document.getElementById('loading').style.display='flex';
@@ -417,141 +472,201 @@ async function loadData(){
   ri.style.animation='spin .8s linear infinite';
 
   try {
-    const [sr,er]=await Promise.all([
-      fetch('api.php?action=salles').then(r=>r.json()),
-      fetch('api.php?action=employes').then(r=>r.json())
+    const [sr, er] = await Promise.all([
+      fetch(`${API}?action=salles`).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }),
+      fetch(`${API}?action=employes`).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     ]);
-    salles=sr.data??[];
-    employes=er.data??[];
 
-    fillSel('salle_id',  salles,   'nom', true);
-    fillSel('employe_id',employes, 'nom', false);
+    if(!sr.success) throw new Error(sr.error || 'Erreur salles');
+    if(!er.success) throw new Error(er.error || 'Erreur employés');
+
+    salles   = sr.data ?? [];
+    employes = er.data ?? [];
+
+    fillSel('salle_id',   salles,   'nom', true);
+    fillSel('employe_id', employes, 'nom', false);
     fillFilter(salles);
 
-    const date=document.getElementById('dateSelect').value||'2024-12-09';
-    const rr=await fetch(`api.php?action=reservations&date=${date}`).then(r=>r.json());
-    reservations=rr.data??[];
+    const date = document.getElementById('dateSelect').value;
+    const rr   = await fetch(`${API}?action=reservations&date=${date}`)
+                        .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+
+    if(!rr.success) throw new Error(rr.error || 'Erreur réservations');
+    reservations = rr.data ?? [];
 
     updateStats();
     renderPlanning();
     document.getElementById('loading').style.display='none';
-  } catch(e){
+    document.getElementById('cfg-banner').style.display='none';
+
+  } catch(e) {
+    let msg = String(e.message || e);
+    let hint = '';
+
+    if(msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_CONNECTION')) {
+      hint = `Apache n'est pas démarré ou le fichier <code>api.php</code> est introuvable dans <code>htdocs/${location.pathname.split('/')[1] || 'roombook'}/</code>. Vérifiez XAMPP.`;
+    } else if(msg.includes('404')) {
+      hint = `Le fichier <code>api.php</code> est introuvable à l'URL : <code>${API}</code>. Vérifiez que les deux fichiers sont dans le même dossier.`;
+    } else if(msg.includes('500') || msg.includes('DB:')) {
+      hint = `Erreur base de données. Vérifiez que MySQL tourne sur le port <code>3307</code> et que la base <code>roombook</code> existe.`;
+    }
+
     document.getElementById('loading').innerHTML=
-      `<span style="color:var(--red)">❌ Erreur : ${e}</span>`;
+      `<div style="text-align:center">
+        <div style="color:var(--red);font-size:15px;margin-bottom:10px">❌ Erreur : ${msg}</div>
+        ${hint ? `<div style="color:var(--muted);font-size:13px;max-width:480px;line-height:1.6">${hint}</div>` : ''}
+      </div>`;
+
+    if(hint) {
+      const banner = document.getElementById('cfg-banner');
+      document.getElementById('cfg-msg').innerHTML = hint;
+      banner.style.display = 'flex';
+    }
   }
   ri.style.animation='';
 }
 
-function fillSel(id,data,field,cap){
-  const s=document.getElementById(id);
-  s.innerHTML='<option value="">— Sélectionner —</option>';
+function fillSel(id, data, field, cap){
+  const s = document.getElementById(id);
+  s.innerHTML = '<option value="">— Sélectionner —</option>';
   data.forEach(i=>{
-    const c=cap&&i.capacite?` · ${i.capacite} pers.`:'';
-    s.innerHTML+=`<option value="${i.id}">${i[field]}${c}</option>`;
+    const c = cap && i.capacite ? ` · ${i.capacite} pers.` : '';
+    s.innerHTML += `<option value="${i.id}">${i[field]}${c}</option>`;
   });
 }
+
 function fillFilter(data){
-  const s=document.getElementById('salleFilter');
-  s.innerHTML='<option value="">Toutes les salles</option>';
-  data.forEach(i=>{ s.innerHTML+=`<option value="${i.id}">${i.nom}</option>`; });
+  const s = document.getElementById('salleFilter');
+  s.innerHTML = '<option value="">Toutes les salles</option>';
+  data.forEach(i=>{ s.innerHTML += `<option value="${i.id}">${i.nom}</option>`; });
 }
 
 function updateStats(){
-  document.getElementById('ss').textContent=salles.length;
-  document.getElementById('se').textContent=employes.length;
-  document.getElementById('sc').textContent=reservations.filter(r=>r.statut==='confirmee').length;
-  document.getElementById('sa').textContent=reservations.filter(r=>r.statut==='en_attente').length;
+  document.getElementById('ss').textContent = salles.length;
+  document.getElementById('se').textContent = employes.length;
+  document.getElementById('sc').textContent = reservations.filter(r=>r.statut==='confirmee').length;
+  document.getElementById('sa').textContent = reservations.filter(r=>r.statut==='en_attente').length;
 }
 
 function renderPlanning(){
-  const fv=document.getElementById('salleFilter').value;
-  const cols=fv?salles.filter(s=>s.id==fv):salles;
+  const fv   = document.getElementById('salleFilter').value;
+  const cols = fv ? salles.filter(s=>String(s.id)===String(fv)) : salles;
   if(!cols.length){
     document.getElementById('planning').innerHTML='<p style="text-align:center;padding:44px;color:var(--muted)">Aucune salle.</p>';
     return;
   }
-  let h=`<table class="planning"><thead><tr><th>Heure</th>`;
+  let h = `<table class="planning"><thead><tr><th>Heure</th>`;
   cols.forEach(s=>{
-    h+=`<th>${s.nom}${s.capacite?`<br><small style="font-size:11px;font-weight:400;opacity:.5">${s.capacite} pers.</small>`:''}</th>`;
+    h += `<th>${s.nom}${s.capacite?`<br><small style="font-size:11px;font-weight:400;opacity:.5">${s.capacite} pers.</small>`:''}</th>`;
   });
-  h+=`</tr></thead><tbody>`;
-  HOURS.forEach((hr,hi)=>{
-    h+=`<tr><td>${hr}</td>`;
+  h += `</tr></thead><tbody>`;
+  HOURS.forEach((hr, hi)=>{
+    h += `<tr><td>${hr}</td>`;
     cols.forEach(s=>{
-      const resa=reservations.filter(r=>r.salle_id==s.id&&overlaps(r.heure_debut,r.heure_fin,hr,HOURS[hi+1]||'18:00'));
-      h+=`<td>`;
+      const next = HOURS[hi+1] || '18:00';
+      const resa = reservations.filter(r=>String(r.salle_id)===String(s.id) && overlaps(r.heure_debut,r.heure_fin,hr,next));
+      h += `<td>`;
       if(resa.length){
         resa.forEach(r=>{
-          const lbl=r.titre.length>18?r.titre.slice(0,17)+'…':r.titre;
-          const tip=`${r.titre} — ${r.employe_nom||'?'} · ${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}`;
-          h+=`<div class="resa ${r.statut}" title="${tip}"><span class="resa-dot"></span>${lbl}</div>`;
+          const lbl = r.titre.length>18 ? r.titre.slice(0,17)+'…' : r.titre;
+          const tip = `${r.titre} — ${r.employe_nom||'?'} · ${r.heure_debut.slice(0,5)}–${r.heure_fin.slice(0,5)}`;
+          h += `<div class="resa ${r.statut}" title="${tip}"><span class="resa-dot"></span>${lbl}</div>`;
         });
       } else {
-        h+=`<div class="slot-empty" onclick="quickBook('${s.id}','${hr}')" title="Réserver ${hr} – ${HOURS[hi+1]||'18:00'}"></div>`;
+        h += `<div class="slot-empty" onclick="quickBook('${s.id}','${hr}')" title="Réserver ${hr} – ${next}"></div>`;
       }
-      h+=`</td>`;
+      h += `</td>`;
     });
-    h+=`</tr>`;
+    h += `</tr>`;
   });
-  h+=`</tbody></table>`;
-  document.getElementById('planning').innerHTML=h;
+  h += `</tbody></table>`;
+  document.getElementById('planning').innerHTML = h;
 }
 
 function overlaps(s1,e1,s2,e2){ return toMin(s1)<toMin(e2)&&toMin(s2)<toMin(e1); }
 function toMin(t){ const[h,m]=t.split(':').map(Number); return h*60+m; }
 
-function quickBook(salleId,heure){
-  document.getElementById('salle_id').value=salleId;
-  document.getElementById('date_reservation').value=document.getElementById('dateSelect').value;
-  document.getElementById('heure_debut').value=heure;
-  const[h,m]=heure.split(':').map(Number);
-  document.getElementById('heure_fin').value=`${String(h+1).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+function quickBook(salleId, heure){
+  document.getElementById('salle_id').value = salleId;
+  document.getElementById('date_reservation').value = document.getElementById('dateSelect').value;
+  document.getElementById('heure_debut').value = heure;
+  const [h,m] = heure.split(':').map(Number);
+  document.getElementById('heure_fin').value = `${String(h+1).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   openModal();
 }
 
 function openModal(){
   if(!document.getElementById('date_reservation').value)
-    document.getElementById('date_reservation').value=document.getElementById('dateSelect').value;
+    document.getElementById('date_reservation').value = document.getElementById('dateSelect').value;
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
-function bgClick(e){ if(e.target===document.getElementById('overlay'))closeModal(); }
+function bgClick(e){ if(e.target===document.getElementById('overlay')) closeModal(); }
 
 async function submitForm(){
-  const ids=['salle_id','employe_id','date_reservation','heure_debut','heure_fin','titre'];
+  const ids = ['salle_id','employe_id','date_reservation','heure_debut','heure_fin','titre'];
   for(const id of ids){
     if(!document.getElementById(id).value){
       toast('❗ Veuillez remplir tous les champs.','err'); return;
     }
   }
-  const data={
-    salle_id:        document.getElementById('salle_id').value,
-    employe_id:      document.getElementById('employe_id').value,
-    date_reservation:document.getElementById('date_reservation').value,
-    heure_debut:     document.getElementById('heure_debut').value+':00',
-    heure_fin:       document.getElementById('heure_fin').value+':00',
-    titre:           document.getElementById('titre').value
+  // Validation heure fin > heure debut
+  const debut = document.getElementById('heure_debut').value;
+  const fin   = document.getElementById('heure_fin').value;
+  if(toMin(fin) <= toMin(debut)){
+    toast('❗ L\'heure de fin doit être après l\'heure de début.','err'); return;
+  }
+
+  const data = {
+    salle_id:         document.getElementById('salle_id').value,
+    employe_id:       document.getElementById('employe_id').value,
+    date_reservation: document.getElementById('date_reservation').value,
+    heure_debut:      debut + ':00',
+    heure_fin:        fin   + ':00',
+    titre:            document.getElementById('titre').value,
+    statut:           'confirmee'
   };
+
+  // Désactiver le bouton pendant l'envoi
+  const btn = document.querySelector('.mfooter .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ En cours…';
+
   try{
-    const res=await fetch('api.php?action=reservation',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)
+    const res  = await fetch(`${API}?action=reservation`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
     });
-    const json=await res.json();
-    if(res.ok&&json.success){ closeModal(); toast('✅ Réservation créée !','ok'); loadData(); }
-    else toast('❌ '+(json.error||'Erreur inconnue'),'err');
-  }catch(e){ toast('❌ Erreur réseau : '+e,'err'); }
+    const json = await res.json();
+    if(res.ok && json.success){
+      closeModal();
+      toast('✅ Réservation créée !','ok');
+      // Reset du formulaire
+      ['salle_id','employe_id','heure_debut','heure_fin','titre'].forEach(id=>{
+        document.getElementById(id).value='';
+      });
+      loadData();
+    } else {
+      toast('❌ '+(json.error||'Erreur inconnue'),'err');
+    }
+  } catch(e){
+    toast('❌ Erreur réseau : '+e.message,'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '✓ Confirmer';
+  }
 }
 
-function toast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=`show ${type}`;
+function toast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg; t.className = `show ${type}`;
   clearTimeout(t._t);
-  t._t=setTimeout(()=>{ t.className=''; },3500);
+  t._t = setTimeout(()=>{ t.className=''; }, 3800);
 }
 
-document.getElementById('dateSelect').onchange=loadData;
-document.getElementById('salleFilter').onchange=renderPlanning;
-document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModal(); });
+document.getElementById('dateSelect').onchange  = loadData;
+document.getElementById('salleFilter').onchange = renderPlanning;
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
 loadData();
 </script>
 </body>

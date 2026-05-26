@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 try {
     $pdo = new PDO(
-        'mysql:host=localhost;dbname=roombook;charset=utf8mb4',
+        'mysql:host=127.0.0.1;port=3307;dbname=roombook;charset=utf8mb4',
         'root', '',
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
     );
