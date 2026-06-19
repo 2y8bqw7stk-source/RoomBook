@@ -77,7 +77,3 @@ http://localhost/your-folder/
 | Anis Helheit | Developer |
 | Abir Badaoui | Developer |
 | Salma Fennane | Supervisor |
-
-## 📄 License
-
-This project was developed as part of the Database module at ESISA — 2025/2026.
